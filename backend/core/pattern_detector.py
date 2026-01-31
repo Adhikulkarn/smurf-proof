@@ -152,3 +152,25 @@ def aggregate_patterns(*pattern_dicts):
             combined[node].update(flags)
 
     return combined
+
+def detect_patterns(G, node_features, edge_features):
+    """
+    Run all rule-based pattern detectors and aggregate results.
+    This is the ONLY function the pipeline should call.
+    """
+
+    fan_out = detect_fan_out(node_features)
+    fan_in = detect_fan_in(node_features)
+    convergence = detect_multi_hop_convergence(G)
+    peeling = detect_peeling_chains(edge_features)
+    mule = detect_mule_wallets(node_features)
+
+    combined = aggregate_patterns(
+        fan_out,
+        fan_in,
+        convergence,
+        peeling,
+        mule,
+    )
+
+    return combined
