@@ -9,23 +9,35 @@ export default function AMLGraph() {
   useEffect(() => {
     Promise.all([
       fetch(`${BASE_URL}/graph/`).then(r => r.json()),
-      fetch(`${BASE_URL}/final-risk/`).then(r => r.json())
+      fetch(`${BASE_URL}/final-risk/`).then(r => r.json()),
+      fetch(`${BASE_URL}/risk-scores/`).then(r => r.json())
     ])
-      .then(([graph, finalRisk]) => {
-        renderGraph(graph, finalRisk);
+      .then(([graph, finalRisk, riskScores]) => {
+        renderGraph(graph, finalRisk, riskScores);
       })
       .catch(err => console.error("❌ API error:", err));
   }, []);
 
-  const renderGraph = (graph, finalRisk) => {
+  const renderGraph = (graph, finalRisk, riskScores) => {
     if (!svgRef.current) return;
 
     const width = window.innerWidth;
     const height = window.innerHeight;
 
     const riskMap = {};
-    finalRisk.wallets.forEach(w => {
+    const finalWallets = Array.isArray(finalRisk?.wallets) ? finalRisk.wallets : [];
+    finalWallets.forEach(w => {
       riskMap[w.id] = w;
+    });
+
+    const riskScoresMap = {};
+    const riskWallets = Array.isArray(riskScores?.wallets)
+      ? riskScores.wallets
+      : Array.isArray(riskScores)
+      ? riskScores
+      : [];
+    riskWallets.forEach(w => {
+      riskScoresMap[w.id] = w;
     });
 
     const svg = d3
@@ -189,11 +201,17 @@ export default function AMLGraph() {
       )
       .on("mouseover", (e, d) => {
         const info = riskMap[d.id];
+        const rs = riskScoresMap[d.id];
+        const finalVal = info?.final_risk ?? d.risk ?? null;
+        const finalText = finalVal !== null ? (finalVal * 100).toFixed(1) + '%' : 'N/A';
+        const rsVal = rs?.base_risk ?? rs?.risk_score ?? rs?.score ?? null;
+        const rsText = rsVal !== null ? (rsVal * 100).toFixed(1) + '%' : 'N/A';
         tooltip
           .style("opacity", 1)
           .html(`
             <strong>${d.id}</strong><br/>
-            Risk: ${(info?.final_risk * 100).toFixed(1)}%<br/>
+            Final Risk: ${finalText}<br/>
+            Risk Score: ${rsText}<br/>
             ${info?.reasons?.map(r => `• ${r}`).join("<br/>") || ""}
           `);
       })
@@ -220,6 +238,24 @@ export default function AMLGraph() {
       );
 
     /* ============================
+       RISK LABELS (percentage next to node)
+    ============================ */
+    const labels = container.append("g")
+      .selectAll("text")
+      .data(graph.nodes)
+      .enter()
+      .append("text")
+      .attr("font-size", 11)
+      .attr("fill", "#e5e7eb")
+      .attr("pointer-events", "none")
+      .attr("dy", ".35em")
+      .text(d => {
+        const rs = riskScoresMap[d.id];
+        const v = rs?.base_risk ?? d.risk ?? null;
+        return v !== null ? (v * 100).toFixed(0) + '%' : '';
+      });
+
+    /* ============================
        SIM TICK
     ============================ */
     sim.on("tick", () => {
@@ -232,6 +268,10 @@ export default function AMLGraph() {
       node
         .attr("cx", d => d.x)
         .attr("cy", d => d.y);
+
+      labels
+        .attr("x", d => d.x + (radius(degree[d.id] || 1) + 8))
+        .attr("y", d => d.y);
     });
 
     /* ============================
@@ -241,7 +281,7 @@ export default function AMLGraph() {
       .attr("transform", "translate(20,20)");
 
     const legendData = [
-      { label: "High Risk Wallet", color: "#dc2626" },
+      { label: "High Risk Wallet", color: "#DC143C" },
       { label: "Medium Risk Wallet", color: "#f97316" },
       { label: "Low Risk Wallet", color: "#22c55e" },
       { label: "Normal Wallet", color: "#2563eb" },
