@@ -60,6 +60,14 @@ def compute_base_risk(
     pattern_results,
     weights=(0.35, 0.30, 0.20, 0.15),
 ):
+    """
+    Compute base laundering risk for each wallet.
+
+    Safeguards:
+    - Skip non-address nodes (labels, tokens, pools)
+    - Clamp final risk score to [0.0, 1.0]
+    """
+
     base_risks = {}
 
     suspicious_wallets = {
@@ -68,6 +76,13 @@ def compute_base_risk(
     }
 
     for wallet, feats in node_features.items():
+
+        # -------------------------------------------------
+        # Skip non-wallet entities (labels, tokens, pools)
+        # -------------------------------------------------
+        if not wallet.startswith("0x"):
+            continue
+
         patterns = pattern_results.get(wallet, {})
 
         structural = compute_structural_risk(feats, patterns)
@@ -75,12 +90,17 @@ def compute_base_risk(
         temporal = compute_temporal_risk(feats, patterns)
         proximity = compute_proximity_risk(G, suspicious_wallets, wallet)
 
-        base_risk = (
+        raw_risk = (
             weights[0] * structural +
             weights[1] * flow +
             weights[2] * temporal +
             weights[3] * proximity
         )
+
+        # -------------------------------------------------
+        # Clamp final risk to valid range
+        # -------------------------------------------------
+        base_risk = max(0.0, min(raw_risk, 1.0))
 
         reasons = []
         if structural > 0.7:
