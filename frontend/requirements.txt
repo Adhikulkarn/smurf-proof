@@ -1,0 +1,2 @@
+tailwindcss @tailwindcss/vite
+d3
