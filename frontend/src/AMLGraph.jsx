@@ -305,15 +305,15 @@ export default function AMLGraph() {
       <style>{`
         .grid-background-graph {
           background-image: 
-            linear-gradient(to right, rgba(59, 130, 246, 0.06) 1px, transparent 1px),
-            linear-gradient(to bottom, rgba(59, 130, 246, 0.06) 1px, transparent 1px);
-          background-size: 50px 50px;
+            linear-gradient(to right, rgba(59, 130, 246, 0.2) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(59, 130, 246, 0.2) 1px, transparent 1px);
+          background-size: 40px 40px;
           animation: gridMove 25s linear infinite;
         }
 
         @keyframes gridMove {
           0% { background-position: 0 0; }
-          100% { background-position: 50px 50px; }
+          100% { background-position: 40px 40px; }
         }
 
         .animate-pulse-slow {
