@@ -1,5 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import AMLGraph from "./AMLGraph";
+import hackuuuImage from "/image1.jpeg";
+import hackuuuImage2 from "/image2.jpeg";   
+import hackuuuImage3 from "/image3.jpeg";
+
 
 const BASE_URL = "http://127.0.0.1:8000/api";
 
@@ -10,15 +14,19 @@ function HowItWorks() {
       id="how-it-works"
       className="relative py-24 px-6 bg-blue-950 border-t border-white/5"
     >
+      
       <div className="max-w-5xl mx-auto text-center py-30">
         <h2 className="text-3xl md:text-4xl font-semibold text-zinc-100">
           How Sumrf-Proof Works
         </h2>
+
         <p className="text-zinc-400 mt-4 max-w-2xl mx-auto">
           From raw transactions to intelligent graph-based AML insights.
         </p>
-
-        <div className="grid md:grid-cols-3 gap-8 mt-16 text-left">
+        <div className="text-left mt-16">
+          <h2 className="text-xl mx-3 font-bold ">User Flow</h2>
+        </div>
+        <div className="grid md:grid-cols-3 gap-8 mt-4 text-left">
           <div className="bg-blue-900/60 backdrop-blur-xl border border-white/10 rounded-2xl p-6">
             <h3 className="text-lg font-medium text-zinc-100 mb-2">
               1. Upload Transactions
@@ -49,6 +57,133 @@ function HowItWorks() {
             </p>
           </div>
         </div>
+        <div className="text-left mt-16">
+          <h2 className="font-bold text-xl mx-3">How it works behind the scene</h2>
+        </div>
+        
+        <div className="flex flex-row gap-6 mt-4 text-left">
+           <div className="w-140 h-66 border border-blue-500 border-5 mt-6  overflow-hidden rounded-xl">
+              <img src={hackuuuImage} alt="404" />
+            </div>
+           <div className="bg-blue-900/60 backdrop-blur-xl w-90 h-66 mt-6 border border-white/10 rounded-2xl p-6">
+            <h3 className="text-lg font-medium text-zinc-100 ">
+              Core Ideas
+            </h3>
+            <p className="text-sm text-zinc-400">
+              The fundamental idea of the system is to represent blockchain transactions as a directed weighted graph
+We model blockchain transactions as a temporal directed graph and apply hybrid intelligence:<br/>
+1.	Graph Construction<br/>
+	  Wallets → nodes<br/>
+	 Transactions → directed edges (amount + time)<br/>
+2.	Rule-Based Graph Pattern Detection
+            </p>
+          </div>
+        </div>
+        <div>
+           <div className="bg-blue-900/60 backdrop-blur-xl w-235 mt-6 border border-white/10 rounded-2xl p-6">
+            <h3 className="text-lg font-medium text-zinc-100 ">
+              
+            </h3>
+            <p className="text-sm text-zinc-400">
+              We model the transaction network as a graph and run a lightweight, CPU-based graph neural propagation to spread suspicion across connected wallets, then fuse this with rule-driven risk signals derived from transaction structure, flow behavior, timing, and proximity to compute an interpretable laundering risk score for each wallet.
+            </p>
+          </div>
+        </div>
+        <div className="flex flex-row gap-6 mt-4 text-left">
+           <div className="w-140 h-187 border object-contain border-blue-500 border-5 mt-6  overflow-hidden rounded-xl">
+              <img  src={hackuuuImage2} alt="404" />
+            </div>
+           <div className="pt-4">
+               <div className="bg-blue-900/60 backdrop-blur-xl h-45 mt-3 border w-90 border-white/10 rounded-2xl p-6">
+            
+            <p className="text-sm text-zinc-400">
+              R(w)=αS(w)+βF(w)+γT(w)+δP(w)
+where:<br/>
+	S(w)= Structural Risk<br/>
+	F(w)= Flow Risk<br/>
+	T(w)= Temporal Risk<br/>
+	P(w)= Proximity Risk<br/>
+	α,β,γ,δare weighting coefficients such that
+α+β+γ+δ=1
+            </p>
+          </div>
+
+           <div className="bg-blue-900/60 backdrop-blur-xl h-30 mt-3 border w-90 border-white/10 rounded-2xl p-6">
+            
+            <p className="text-sm text-zinc-400">
+              In structural Risk<br/>
+              "fan_in"(w)= normalized in-degree of wallet w<br/>
+	"fan_out"(w)= normalized out-degree of wallet w
+
+            </p>
+          </div>
+
+           <div className="bg-blue-900/60 backdrop-blur-xl h-30 mt-3 border w-90 border-white/10 rounded-2xl p-6">
+            
+            <p className="text-sm text-zinc-400">
+              In Flow Risk<br/>
+              ε is a small threshold<br/>
+	"inflow"(w)and "outflow"(w)represent total transaction value
+            </p>
+          </div>
+
+          <div className="bg-blue-900/60 backdrop-blur-xl h-30 mt-3 border w-90 border-white/10 rounded-2xl p-6">
+            
+            <p className="text-sm text-zinc-400">
+              In Temproal Risk<br/>
+             Δt=t_2-t_1is a short time window<br/>
+High temporal risk indicates rapid fund movement
+            </p>
+          </div>
+
+          <div className="bg-blue-900/60 backdrop-blur-xl h-40 mt-3 border w-90 border-white/10 rounded-2xl p-6">
+            
+            <p className="text-sm text-zinc-400">
+              In Proximity Risk<br/>
+              Proximity risk captures the influence of nearby suspicious wallets in the transaction graph. Wallets closer to high-risk entities are assigned to higher risk.<br/>
+P(w)=1/(d(w)+1)
+            </p>
+          </div>
+
+           </div>
+           
+          
+           
+        </div>
+            <div className="flex flex-row gap-6 mt-9 text-left">
+              <div>
+                <h3 className="text-xl font-bold">Risk Computation by CPU based GNN Computation</h3>
+                <div className="w-140 h-94 border border-blue-500 overflow-hidden border-5 mt-6 rounded-xl">
+                  <img  src={hackuuuImage3} alt="404" />
+                </div>
+                
+              </div> 
+              <div className="bg-blue-900/60 backdrop-blur-xl h-94  mt-12 border w-90 border-white/10 rounded-2xl p-6">
+            
+            <p className="text-sm text-zinc-400">
+            The wallet whose risk representation is being updated<br/>
+
+N(v): All wallets that have directly interacted with wallet v<br/>
+
+hᵤ(l): Current feature representation of a neighboring wallet u<br/>
+
+mean( ): Averages neighbor information to keep computation stable and CPU-efficient<br/>
+
+W: Learnable weight that controls how much neighbor behavior influences risk<br/>
+
+σ: Non-linear activation that helps capture complex laundering patterns<br/>
+
+hᵥ(l+1): Updated wallet representation after aggregating neighbor information<br/>
+            </p>
+          </div>
+              </div>
+              <div className="bg-blue-900/60 backdrop-blur-xl   mt-12 border w-240 border-white/10 rounded-2xl p-6">
+            <h3>Conclusion:</h3>
+            <p className="text-sm text-zinc-400">
+          
+We combine rule-based AML signals with a graph neural network–based propagation approach to compute a final risk score for each wallet. The rule engine captures explicit laundering behaviors such as fan-in, fan-out, pass-through flow, and suspicious timing, ensuring interpretability and regulatory alignment. The CPU-based GNN then propagates this risk through the transaction graph, allowing indirect and hidden relationships to influence wallet suspicion. By fusing both perspectives, the final risk score balances explainable rule violations with relational intelligence from the network structure, resulting in a more robust, scalable, and realistic money-laundering detection system.
+            </p>
+          </div>
       </div>
     </section>
   );
@@ -155,13 +290,6 @@ export default function GraphGuardHome() {
   return (
     <div className="min-h-screen bg-blue-950 text-zinc-200 relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-b from-blue-900/40 to-blue-950" />
-
-      <button
-        onClick={() => (window.location.href = "/")}
-        className="fixed top-6 left-6 z-50 px-4 py-2 rounded-xl bg-blue-900/60 backdrop-blur-xl border border-white/10 text-sm font-medium animate-logo hover:scale-110 transition"
-      >
-        Smurf-Proof
-      </button>
 
       {showPopup && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
