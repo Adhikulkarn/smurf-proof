@@ -1,3 +1,4 @@
+import math
 import networkx as nx
 
 # -------------------------------------------------
@@ -10,28 +11,38 @@ LOW_IMBALANCE_THRESHOLD = 0.2
 
 
 # -------------------------------------------------
-# Individual Risk Components (FIXED)
+# Utility
 # -------------------------------------------------
-def compute_structural_risk(node_feats, patterns):
+def safe(v, default=0.0):
     """
-    Structural risk exists ONLY if fan-in or fan-out
-    exceeds laundering thresholds.
+    Converts NaN / None / invalid values to safe defaults.
     """
-    if node_feats["out_degree"] >= FAN_OUT_THRESHOLD:
+    if v is None:
+        return default
+    if isinstance(v, float) and math.isnan(v):
+        return default
+    return v
+
+
+# -------------------------------------------------
+# Individual Risk Components
+# -------------------------------------------------
+def compute_structural_risk(node_feats):
+    in_deg = safe(node_feats.get("in_degree"), 0)
+    out_deg = safe(node_feats.get("out_degree"), 0)
+
+    if out_deg >= FAN_OUT_THRESHOLD:
         return 1.0
-    if node_feats["in_degree"] >= FAN_IN_THRESHOLD:
+    if in_deg >= FAN_IN_THRESHOLD:
         return 1.0
+
     return 0.0
 
 
-def compute_flow_risk(node_feats, patterns):
-    """
-    Flow risk exists ONLY for pass-through behavior:
-    multiple incoming + outgoing with low imbalance.
-    """
-    incoming = node_feats.get("in_degree", 0)
-    outgoing = node_feats.get("out_degree", 0)
-    imbalance = node_feats.get("flow_imbalance", 1.0)
+def compute_flow_risk(node_feats):
+    incoming = safe(node_feats.get("in_degree"), 0)
+    outgoing = safe(node_feats.get("out_degree"), 0)
+    imbalance = safe(node_feats.get("flow_imbalance"), 1.0)
 
     if incoming >= 2 and outgoing >= 1 and imbalance <= LOW_IMBALANCE_THRESHOLD:
         return 1.0
@@ -39,18 +50,13 @@ def compute_flow_risk(node_feats, patterns):
     return 0.0
 
 
-def compute_temporal_risk(node_feats, patterns):
-    """
-    Temporal risk exists ONLY when multiple transactions
-    occur in a short time window.
-    """
-    tx_count = node_feats.get("tx_count", 0)
-    time_span = node_feats.get("active_time_span", 1.0)
+def compute_temporal_risk(node_feats):
+    tx_count = safe(node_feats.get("tx_count"), 0)
+    time_span = safe(node_feats.get("active_time_span"), 1.0)
 
     if tx_count < MIN_TX_TEMPORAL:
         return 0.0
 
-    # time_span is assumed normalized [0,1]
     if time_span <= 0.3:
         return 1.0
 
@@ -58,9 +64,6 @@ def compute_temporal_risk(node_feats, patterns):
 
 
 def compute_proximity_risk(G, suspicious_wallets, wallet, max_hops=3):
-    """
-    Proximity risk propagates suspicion through the graph.
-    """
     for s in suspicious_wallets:
         if wallet == s:
             return 1.0
@@ -75,7 +78,7 @@ def compute_proximity_risk(G, suspicious_wallets, wallet, max_hops=3):
 
 
 # -------------------------------------------------
-# Base Risk Aggregation (GATED)
+# Base Risk Aggregation (NaN-Safe, Gated)
 # -------------------------------------------------
 def compute_base_risk(
     G,
@@ -86,8 +89,10 @@ def compute_base_risk(
     """
     AML-grade base risk computation.
 
-    RULE:
+    RULES:
+    - Skip non-wallet entities
     - No structural OR flow anomaly → base_risk = 0
+    - Never output NaN
     """
 
     base_risks = {}
@@ -103,28 +108,29 @@ def compute_base_risk(
         if not wallet.startswith("0x"):
             continue
 
-        patterns = pattern_results.get(wallet, {})
+        structural = compute_structural_risk(feats)
+        flow = compute_flow_risk(feats)
 
-        structural = compute_structural_risk(feats, patterns)
-        flow = compute_flow_risk(feats, patterns)
-
-        # 🚨 HARD GATE (this fixes your issue)
+        # 🚨 HARD GATE
         if structural == 0.0 and flow == 0.0:
             base_risk = 0.0
             temporal = 0.0
             proximity = 0.0
         else:
-            temporal = compute_temporal_risk(feats, patterns)
+            temporal = compute_temporal_risk(feats)
             proximity = compute_proximity_risk(G, suspicious_wallets, wallet)
 
-            base_risk = (
+            raw = (
                 weights[0] * structural +
                 weights[1] * flow +
                 weights[2] * temporal +
                 weights[3] * proximity
             )
 
-        base_risk = round(min(base_risk, 1.0), 3)
+            base_risk = safe(raw, 0.0)
+
+        # Final clamp (absolute safety)
+        base_risk = round(max(0.0, min(base_risk, 1.0)), 3)
 
         reasons = []
         if structural:
