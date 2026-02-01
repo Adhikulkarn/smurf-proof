@@ -233,14 +233,14 @@ export default function AMLGraph() {
       <div className="absolute inset-0 grid-background-graph" />
       
       {/* Gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-blue-950/40 via-slate-950/60 to-slate-950/80 pointer-events-none" />
+      <div className="absolute inset-0 bg-linear-to-b from-blue-950/40 via-slate-950/60 to-slate-950/80 pointer-events-none" />
       
       {/* Radial glow effects */}
       <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl animate-pulse-slow pointer-events-none" />
       <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-cyan-500/5 rounded-full blur-3xl animate-pulse-slower pointer-events-none" />
       
       {/* Legend */}
-      <div className="absolute top-6 right-6 bg-gradient-to-br from-blue-900/60 to-slate-900/60 backdrop-blur-xl border border-blue-400/20 rounded-xl p-4 shadow-lg shadow-blue-500/10 z-10">
+      <div className="absolute top-6 right-6 bg-linear-to-br from-blue-900/60 to-slate-900/60 backdrop-blur-xl border border-blue-400/20 rounded-xl p-4 shadow-lg shadow-blue-500/10 z-10">
         <div className="text-sm font-semibold text-zinc-100 mb-3">Risk Levels</div>
         <div className="space-y-2 text-xs">
           <div className="flex items-center gap-2">
@@ -283,7 +283,7 @@ export default function AMLGraph() {
       {/* Back button */}
       <button
         onClick={() => window.location.reload()}
-        className="absolute top-6 left-6 z-10 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 backdrop-blur-xl border border-blue-400/30 text-sm font-semibold shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40 hover:scale-105 transition-all duration-300"
+        className="absolute top-6 left-6 z-10 px-5 py-2.5 rounded-xl bg-linear-to-r from-blue-600 to-blue-500 backdrop-blur-xl border border-blue-400/30 text-sm font-semibold shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40 hover:scale-105 transition-all duration-300"
       >
         <span className="flex items-center gap-2">
           <span>←</span>
@@ -292,7 +292,7 @@ export default function AMLGraph() {
       </button>
 
       {/* Graph controls info */}
-      <div className="absolute bottom-6 left-6 bg-gradient-to-br from-blue-900/60 to-slate-900/60 backdrop-blur-xl border border-blue-400/20 rounded-xl p-4 shadow-lg shadow-blue-500/10 z-10">
+      <div className="absolute bottom-6 left-6 bg-linear-to-br from-blue-900/60 to-slate-900/60 backdrop-blur-xl border border-blue-400/20 rounded-xl p-4 shadow-lg shadow-blue-500/10 z-10">
         <div className="text-xs text-zinc-400 space-y-1">
           <div><span className="text-blue-400 font-semibold">Drag</span> nodes to reposition</div>
           <div><span className="text-blue-400 font-semibold">Scroll</span> to zoom in/out</div>
