@@ -287,7 +287,7 @@ export default function AMLGraph() {
       >
         <span className="flex items-center gap-2">
           <span>←</span>
-          <span className="bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">Back to Home</span>
+          <span className="bg-linear-to-r from-white to-blue-100 bg-clip-text text-transparent">Back to Home</span>
         </span>
       </button>
 
