@@ -261,9 +261,6 @@ export default function GraphGuardHome() {
             <HowItWorks />
           </div>
 
-          <footer className="relative py-6 text-center text-sm text-zinc-500 border-t border-white/5">
-            © {new Date().getFullYear()} GraphGuard AML. All rights reserved.
-          </footer>
         </>
       )}
 
