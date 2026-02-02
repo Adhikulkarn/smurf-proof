@@ -53,9 +53,9 @@ This repository implements a rule-based and learnable pipeline to detect suspici
 
 - Fan-out (splitting / smurfing): flagged if
   $$\text{out\_degree} \geq \text{out\_thresh} \quad\text{and}\quad \text{in\_degree} \leq \text{in\_thresh}$$
-  (defaults: out_thresh=0.6, in_thresh=0.2 in code)
+  (defaults: `out_thresh=0.6`, `in_thresh=0.2` in code)
 
-- Fan-in (aggregation): symmetric rule with swapped thresholds (defaults: in_thresh=0.6, out_thresh=0.2).
+- Fan-in (aggregation): symmetric rule with swapped thresholds (defaults: `in_thresh=0.6`, `out_thresh=0.2`).
 
 - Multi-hop convergence: node is considered converging if it reaches many endpoints within a small hop limit and those endpoints collapse to the same downstream wallet (see code logic with `max_hops=3`).
 
@@ -63,7 +63,7 @@ This repository implements a rule-based and learnable pipeline to detect suspici
 
 - Mule / pass-through wallets: flagged when
   $$\text{flow\_imbalance} \leq \text{imbalance\_thresh} \ \wedge\ \text{active\_time\_span} \leq \text{time\_thresh} \ \wedge\ \text{tx\_count} \geq \text{degree\_thresh}$$
-  (defaults: imbalance_thresh=0.2, time_thresh=0.3, degree_thresh=0.2)
+  (defaults: `imbalance_thresh=0.2`, `time_thresh=0.3`, `degree_thresh=0.2`)
 
 4) Base risk computation (see `risk_scorer.py`)
 
