@@ -18,7 +18,8 @@ This repository implements a rule-based and learnable pipeline to detect suspici
 
 **High-level Pipeline**
 1. Load transaction CSV and build a directed graph ([`graph_builder.py`](backend/core/graph_builder.py)).
-2. Extract node & edge features ([`feature_extractor.py`](backend/core/feature_extractor.py)).
+2. Extract node & edge features ([`feature_extractor.py`](backend/core/feature_extracto
+r.py)).
 3. Run rule-based pattern detectors ([`pattern_detector.py`](backend/core/pattern_detector.py)).
 4. Compute interpretable base risk per wallet ([`risk_scorer.py`](backend/core/risk_scorer.py)).
 5. Optionally prepare inputs and refine risks with a CPU GNN ([`gnn_preparer.py`](backend/core/gnn_preparer.py), [`gnn_cpu.py`](backend/core/gnn_cpu.py)).
@@ -71,7 +72,7 @@ This repository implements a rule-based and learnable pipeline to detect suspici
   - Structural risk `S`: returns 1.0 if either `out_degree >= FAN_OUT_THRESHOLD` or `in_degree >= FAN_IN_THRESHOLD`, else 0.0. (Constants: `FAN_OUT_THRESHOLD=3`, `FAN_IN_THRESHOLD=3`)
   - Flow risk `F`: returns 1.0 if `incoming >= 2`, `outgoing >= 1`, and `flow_imbalance <= LOW_IMBALANCE_THRESHOLD` (default `LOW_IMBALANCE_THRESHOLD=0.2`), else 0.0.
   - Temporal risk `T`: requires at least `MIN_TX_TEMPORAL` transactions (default 3); if `time_span <= 0.3` → 1.0, else 0.0.
-  - Proximity risk `P`: for a wallet $w$, consider a set of suspicious wallets $S$ (from pattern detector). Compute shortest path distance $d(w,s)$; if $d\leq\text{max_hops}$ then contribution is $1/(d+1)$; if $w\in S$ returns 1.0. Otherwise 0.
+  - Proximity risk `P`: for a wallet $w$, consider a set of suspicious wallets $S$ (from pattern detector). Compute shortest path distance $d(w,s)$; if $d \leq \text{max\_hops}$ then contribution is $1/(d+1)$; if $w\in S$ returns 1.0. Otherwise 0.
 
 - Hard gating: if both `S==0` and `F==0` then the wallet's `base_risk` is forced to 0.0 (no structural OR flow anomaly → no base risk).
 
