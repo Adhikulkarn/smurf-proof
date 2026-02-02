@@ -59,7 +59,7 @@ This repository implements a rule-based and learnable pipeline to detect suspici
 
 - Multi-hop convergence: node is considered converging if it reaches many endpoints within a small hop limit and those endpoints collapse to the same downstream wallet (see code logic with `max_hops=3`).
 
-- Peeling chains: an edge contributes to peeling if $\text{peeling\_ratio} \geq \text{peel\_thresh}$ (default 0.8). Repeated occurrences mark the source node.
+- Peeling chains: an edge contributes to peeling if $\text{peeling\_ratio} \geq \text{`peel_thresh`}$ (default 0.8). Repeated occurrences mark the source node.
 
 - Mule / pass-through wallets: flagged when
   $$\text{flow\_imbalance} \leq \text{imbalance\_thresh} \ \wedge\ \text{active\_time\_span} \leq \text{time\_thresh} \ \wedge\ \text{tx\_count} \geq \text{degree\_thresh}$$
