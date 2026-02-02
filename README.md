@@ -2,73 +2,75 @@
 
 This repository implements a rule-based and learnable pipeline to detect suspicious transaction behavior (smurfing, pass-through/mule wallets, peeling chains, and multi-hop convergence) and compute per-wallet risk scores.
 
-**Project Goals**
-- **Detect** suspicious transaction patterns at graph scale.
-- **Score** wallets with an interpretable base risk and optional GNN-based refinement.
-- **Expose** results via a Django server and a lightweight React frontend.
-
-**Where to look in the codebase**
-- Core scoring and utilities: [backend/core/risk_scorer.py](backend/core/risk_scorer.py)
-- Pattern detectors (rule-based): [backend/core/pattern_detector.py](backend/core/pattern_detector.py)
-- Feature extraction: [backend/core/feature_extractor.py](backend/core/feature_extractor.py)
-- Graph construction: [backend/core/graph_builder.py](backend/core/graph_builder.py)
-- Normalization helper: [backend/core/normalizer.py](backend/core/normalizer.py)
-- GNN preparation and CPU-only GNN: [backend/core/gnn_preparer.py](backend/core/gnn_preparer.py), [backend/core/gnn_cpu.py](backend/core/gnn_cpu.py)
-- Pipeline orchestrator: [backend/core/pipeline.py](backend/core/pipeline.py)
-
-**High-level Pipeline**
-1. Load transaction CSV and build a directed graph ([`graph_builder.py`](backend/core/graph_builder.py)).
-2. Extract node & edge features ([`feature_extractor.py`](backend/core/feature_extracto
-r.py)).
-3. Run rule-based pattern detectors ([`pattern_detector.py`](backend/core/pattern_detector.py)).
-4. Compute interpretable base risk per wallet ([`risk_scorer.py`](backend/core/risk_scorer.py)).
-5. Optionally prepare inputs and refine risks with a CPU GNN ([`gnn_preparer.py`](backend/core/gnn_preparer.py), [`gnn_cpu.py`](backend/core/gnn_cpu.py)).
-
 **Detailed Formulas and Rules**
 
 1) Feature extraction formulas (see `feature_extractor.py`)
 
 - Total inflow / outflow per node:
-  $$\text{total\_inflow} = \sum_{(u\rightarrow v)} \text{amount}_{uv}$$
-  $$\text{total\_outflow} = \sum_{(v\rightarrow w)} \text{amount}_{vw}$$
+  - `total_inflow = sum_{(u->v)} amount_uv`
+  - `total_outflow = sum_{(v->w)} amount_vw`
 
 - Transaction count:
-  $$\text{tx\_count} = \text{in\_degree} + \text{out\_degree}$$
+  - `tx_count = in_degree + out_degree`
 
 - Active time span (seconds):
-  $$\text{active\_time\_span} = \max(\text{timestamps}) - \min(\text{timestamps})$$
+  - `active_time_span = max(timestamps) - min(timestamps)`
 
 - Flow imbalance (normalized absolute difference):
-  $$\text{flow\_imbalance} = \frac{|\text{total\_inflow} - \text{total\_outflow}|}{\text{total\_inflow} + \text{total\_outflow} + 10^{-9}}$$
+  - `flow_imbalance = abs(total_inflow - total_outflow) / (total_inflow + total_outflow + 1e-9)`
 
 - Edge peeling ratio (how much a forwarded edge passes through relative to largest incoming):
-  $$\text{peeling\_ratio}_{(u,v)} = \frac{\text{amount}_{uv}}{\max\_{(x\rightarrow u)}(\text{amount}_{xu}) + 10^{-9}}$$
+  - `peeling_ratio_(u,v) = amount_uv / (max_{(x->u)} amount_xu + 1e-9)`
 
 2) Normalization (see `normalizer.py`)
 
 - Min–max normalization applied per feature across nodes/edges:
-  For a feature value $v$, across observed values $v_{min}, v_{max}$:
-  $$v_{norm} = \begin{cases}0 &\text{if } v_{max}=v_{min} \\ \frac{v - v_{min}}{v_{max} - v_{min}} &\text{otherwise}\end{cases}$$
+  - For a feature value `v`, with observed values `v_min` and `v_max`:
+    - If `v_max == v_min` then `v_norm = 0`
+    - Otherwise `v_norm = (v - v_min) / (v_max - v_min)`
 
 3) Rule-based pattern detectors (see `pattern_detector.py`)
 
 - Fan-out (splitting / smurfing): flagged if
-  $$\text{out\_degree} \geq \text{out\_thresh} \quad\text{and}\quad \text{in\_degree} \leq \text{in\_thresh}$$
-  (defaults: `out_thresh=0.6`, `in_thresh=0.2` in code)
+  - `out_degree >= out_thresh` and `in_degree <= in_thresh` (defaults: `out_thresh=0.6`, `in_thresh=0.2`)
 
 - Fan-in (aggregation): symmetric rule with swapped thresholds (defaults: `in_thresh=0.6`, `out_thresh=0.2`).
 
 - Multi-hop convergence: node is considered converging if it reaches many endpoints within a small hop limit and those endpoints collapse to the same downstream wallet (see code logic with `max_hops=3`).
 
-- Peeling chains: an edge contributes to peeling if $\text{peeling\_ratio} \geq \text{`peel_thresh`}$ (default 0.8). Repeated occurrences mark the source node.
+- Peeling chains: an edge contributes to peeling if `peeling_ratio >= peel_thresh` (default `peel_thresh=0.8`). Repeated occurrences mark the source node.
 
-- Mule / pass-through wallets: flagged when
-  $$\text{flow\_imbalance} \leq \text{imbalance\_thresh} \ \wedge\ \text{active\_time\_span} \leq \text{time\_thresh} \ \wedge\ \text{tx\_count} \geq \text{degree\_thresh}$$
+- Mule / pass-through wallets: flagged when all of the following hold:
+  - `flow_imbalance <= imbalance_thresh`
+  - `active_time_span <= time_thresh`
+  - `tx_count >= degree_thresh`
   (defaults: `imbalance_thresh=0.2`, `time_thresh=0.3`, `degree_thresh=0.2`)
 
 4) Base risk computation (see `risk_scorer.py`)
 
 - Individual component rules (gating thresholds):
+  - Structural risk `S`: returns `1.0` if either `out_degree >= FAN_OUT_THRESHOLD` or `in_degree >= FAN_IN_THRESHOLD`, else `0.0`. (Constants: `FAN_OUT_THRESHOLD=3`, `FAN_IN_THRESHOLD=3`)
+  - Flow risk `F`: returns `1.0` if `incoming >= 2`, `outgoing >= 1`, and `flow_imbalance <= LOW_IMBALANCE_THRESHOLD` (default `LOW_IMBALANCE_THRESHOLD=0.2`), else `0.0`.
+  - Temporal risk `T`: requires at least `MIN_TX_TEMPORAL` transactions (default `3`); if `time_span <= 0.3` then `T = 1.0`, else `0.0`.
+  - Proximity risk `P`: for a wallet `w`, consider the set of suspicious wallets `S` (from pattern detector). Compute shortest path distance `d(w,s)`; if `d <= max_hops` then contribution is `1/(d+1)`; if `w` in `S` returns `1.0`. Otherwise `0.0`.
+
+- Hard gating: if both `S == 0` and `F == 0` then the wallet's `base_risk` is forced to `0.0` (no structural OR flow anomaly → no base risk).
+
+- Weighted aggregation into raw base risk:
+  - Let weights `w_S, w_F, w_T, w_P` (defaults: `(0.4, 0.3, 0.2, 0.1)`). Compute:
+    - `raw = w_S * S + w_F * F + w_T * T + w_P * P`
+
+- Final safety clamp and rounding:
+  - `base_risk = round(clip(raw, 0, 1), 3)`
+
+5) Optional GNN refinement (see `gnn_preparer.py` and `gnn_cpu.py`)
+
+- Input node vector `x_v` includes extracted features and the base risk.
+- Message passing implemented (CPU-only toy GNN): aggregated message for node `v` is the mean of incoming node features:
+  - `m_v = sum(x_u for (u->v)) / deg(v)`
+
+- A linear projection followed by a sigmoid produces a refined risk:
+  - `r_v = sigmoid(W @ m_v + b)`
   - Structural risk `S`: returns 1.0 if either `out_degree >= FAN_OUT_THRESHOLD` or `in_degree >= FAN_IN_THRESHOLD`, else 0.0. (Constants: `FAN_OUT_THRESHOLD=3`, `FAN_IN_THRESHOLD=3`)
   - Flow risk `F`: returns 1.0 if `incoming >= 2`, `outgoing >= 1`, and `flow_imbalance <= LOW_IMBALANCE_THRESHOLD` (default `LOW_IMBALANCE_THRESHOLD=0.2`), else 0.0.
   - Temporal risk `T`: requires at least `MIN_TX_TEMPORAL` transactions (default 3); if `time_span <= 0.3` → 1.0, else 0.0.
