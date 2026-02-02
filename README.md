@@ -28,47 +28,31 @@ This repository implements a rule-based and learnable pipeline to detect suspici
 1) Feature extraction formulas (see `feature_extractor.py`)
 
 - Total inflow / outflow per node:
-```math
-\text{total\_inflow} = \sum_{(u\rightarrow v)} \text{amount}_{uv}
-```
-```math
-\text{total\_outflow} = \sum_{(v\rightarrow w)} \text{amount}_{vw}
-```
+  $$\text{total\_inflow} = \sum_{(u\rightarrow v)} \text{amount}_{uv}$$
+  $$\text{total\_outflow} = \sum_{(v\rightarrow w)} \text{amount}_{vw}$$
 
 - Transaction count:
-```math
-\text{tx\_count} = \text{in\_degree} + \text{out\_degree}
-```
+  $$\text{tx\_count} = \text{in\_degree} + \text{out\_degree}$$
 
 - Active time span (seconds):
-```math
-\text{active\_time\_span} = \max(\text{timestamps}) - \min(\text{timestamps})
-```
+  $$\text{active\_time\_span} = \max(\text{timestamps}) - \min(\text{timestamps})$$
 
 - Flow imbalance (normalized absolute difference):
-```math
-\text{flow\_imbalance} = \frac{|\text{total\_inflow} - \text{total\_outflow}|}{\text{total\_inflow} + \text{total\_outflow} + 10^{-9}}
-```
+  $$\text{flow\_imbalance} = \frac{|\text{total\_inflow} - \text{total\_outflow}|}{\text{total\_inflow} + \text{total\_outflow} + 10^{-9}}$$
 
 - Edge peeling ratio (how much a forwarded edge passes through relative to largest incoming):
-```math
-\text{peeling\_ratio}_{(u,v)} = \frac{\text{amount}_{uv}}{\max\_{(x\rightarrow u)}(\text{amount}_{xu}) + 10^{-9}}
-```
+  $$\text{peeling\_ratio}_{(u,v)} = \frac{\text{amount}_{uv}}{\max\_{(x\rightarrow u)}(\text{amount}_{xu}) + 10^{-9}}$$
 
 2) Normalization (see `normalizer.py`)
 
 - Min–max normalization applied per feature across nodes/edges:
   For a feature value $v$, across observed values $v_{min}, v_{max}$:
-```math
-v_{norm} = \begin{cases}0 &\text{if } v_{max}=v_{min} \ \frac{v - v_{min}}{v_{max} - v_{min}} &\text{otherwise}\end{cases}
-```
+  $$v_{norm} = \begin{cases}0 &\text{if } v_{max}=v_{min} \\ \frac{v - v_{min}}{v_{max} - v_{min}} &\text{otherwise}\end{cases}$$
 
 3) Rule-based pattern detectors (see `pattern_detector.py`)
 
 - Fan-out (splitting / smurfing): flagged if
-```math
-\text{out\_degree} \geq \text{out\_thresh} \quad\text{and}\quad \text{in\_degree} \leq \text{in\_thresh}
-```
+  $$\text{out\_degree} \geq \text{out\_thresh} \quad\text{and}\quad \text{in\_degree} \leq \text{in\_thresh}$$
   (defaults: `out_thresh=0.6`, `in_thresh=0.2` in code)
 
 - Fan-in (aggregation): symmetric rule with swapped thresholds (defaults: `in_thresh=0.6`, `out_thresh=0.2`).
@@ -78,9 +62,7 @@ v_{norm} = \begin{cases}0 &\text{if } v_{max}=v_{min} \ \frac{v - v_{min}}{v_{ma
 - Peeling chains: an edge contributes to peeling if $\text{peeling\_ratio} \geq \text{`peel_thresh`}$ (default 0.8). Repeated occurrences mark the source node.
 
 - Mule / pass-through wallets: flagged when
-```math
-\text{flow\_imbalance} \leq \text{imbalance\_thresh} \ \wedge\ \text{active\_time\_span} \leq \text{time\_thresh} \ \wedge\ \text{tx\_count} \geq \text{degree\_thresh}
-```
+  $$\text{flow\_imbalance} \leq \text{imbalance\_thresh} \ \wedge\ \text{active\_time\_span} \leq \text{time\_thresh} \ \wedge\ \text{tx\_count} \geq \text{degree\_thresh}$$
   (defaults: `imbalance_thresh=0.2`, `time_thresh=0.3`, `degree_thresh=0.2`)
 
 4) Base risk computation (see `risk_scorer.py`)
@@ -95,27 +77,19 @@ v_{norm} = \begin{cases}0 &\text{if } v_{max}=v_{min} \ \frac{v - v_{min}}{v_{ma
 
 - Weighted aggregation into raw base risk:
   Let weights $w_S,w_F,w_T,w_P$ (defaults: $(0.4,0.3,0.2,0.1)$). Compute
-```math
-\text{raw} = w_S\cdot S + w_F\cdot F + w_T\cdot T + w_P\cdot P
-```
+  $$\text{raw} = w_S\cdot S + w_F\cdot F + w_T\cdot T + w_P\cdot P$$
 
 - Final safety clamp and rounding:
-```math
-\text{base\_risk} = \text{round}\big(\text{clip}(\text{raw},0,1),\;3\big)
-```
+  $$\text{base\_risk} = \text{round}\big(\text{clip}(\text{raw},0,1),\;3\big)$$
 
 5) Optional GNN refinement (see `gnn_preparer.py` and `gnn_cpu.py`)
 
 - Input node vector $x_v$ includes extracted features and the base risk.
 - Message passing implemented (CPU-only toy GNN): aggregated message for node $v$ is the mean of incoming node features:
-```math
-m_v = \frac{1}{\deg(v)}\sum_{(u\rightarrow v)} x_u
-```
+  $$m_v = \frac{1}{\deg(v)}\sum_{(u\rightarrow v)} x_u$$
 
 - A linear projection followed by a sigmoid produces a refined risk:
-```math
-r_v = \sigma\big(W m_v + b\big)\quad\text{(sigmoid)}
-```
+  $$r_v = \sigma\big(W m_v + b\big)\quad\text{(sigmoid)}$$
 
 **Implementation safety notes**
 - All numeric operations use small epsilon constants (e.g., $10^{-9}$) to avoid division-by-zero.
