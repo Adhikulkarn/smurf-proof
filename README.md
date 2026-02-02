@@ -1,14 +1,11 @@
 # Smurf-Proof: AML Risk Scoring for Ethereum-like Transaction Graphs
-
-This repository implements a rule-based and learnable pipeline to detect suspicious transaction behavior (smurfing, pass-through/mule wallets, peeling chains, and multi-hop convergence) and compute per-wallet risk scores.
-
 **Detailed Formulas and Rules**
 
 1) Feature extraction formulas (see `feature_extractor.py`)
 
 - Total inflow / outflow per node:
-  - `total_inflow = sum_{(u->v)} amount_uv`
-  - `total_outflow = sum_{(v->w)} amount_vw`
+  - `total_inflow = sum(amount_uv for (u->v))`
+  - `total_outflow = sum(amount_vw for (v->w))`
 
 - Transaction count:
   - `tx_count = in_degree + out_degree`
@@ -20,7 +17,7 @@ This repository implements a rule-based and learnable pipeline to detect suspici
   - `flow_imbalance = abs(total_inflow - total_outflow) / (total_inflow + total_outflow + 1e-9)`
 
 - Edge peeling ratio (how much a forwarded edge passes through relative to largest incoming):
-  - `peeling_ratio_(u,v) = amount_uv / (max_{(x->u)} amount_xu + 1e-9)`
+  - `peeling_ratio_(u,v) = amount_uv / (max(amount_xu for (x->u)) + 1e-9)`
 
 2) Normalization (see `normalizer.py`)
 
@@ -71,26 +68,6 @@ This repository implements a rule-based and learnable pipeline to detect suspici
 
 - A linear projection followed by a sigmoid produces a refined risk:
   - `r_v = sigmoid(W @ m_v + b)`
-  - Structural risk `S`: returns 1.0 if either `out_degree >= FAN_OUT_THRESHOLD` or `in_degree >= FAN_IN_THRESHOLD`, else 0.0. (Constants: `FAN_OUT_THRESHOLD=3`, `FAN_IN_THRESHOLD=3`)
-  - Flow risk `F`: returns 1.0 if `incoming >= 2`, `outgoing >= 1`, and `flow_imbalance <= LOW_IMBALANCE_THRESHOLD` (default `LOW_IMBALANCE_THRESHOLD=0.2`), else 0.0.
-  - Temporal risk `T`: requires at least `MIN_TX_TEMPORAL` transactions (default 3); if `time_span <= 0.3` → 1.0, else 0.0.
-  - Proximity risk `P`: for a wallet $w$, consider a set of suspicious wallets $S$ (from pattern detector). Compute shortest path distance $d(w,s)$; if $d \leq \text{max\_hops}$ then contribution is $1/(d+1)$; if $w\in S$ returns 1.0. Otherwise 0.
-
-- Hard gating: if both `S==0` and `F==0` then the wallet's `base_risk` is forced to 0.0 (no structural OR flow anomaly → no base risk).
-
-- Weighted aggregation into raw base risk:
-  Let weights $w_S,w_F,w_T,w_P$ (defaults: $(0.4,0.3,0.2,0.1)$). Compute
-  $$\text{raw} = w_S\cdot S + w_F\cdot F + w_T\cdot T + w_P\cdot P$$
-
-- Final safety clamp and rounding:
-  $$\text{base\_risk} = \text{round}\big(\text{clip}(\text{raw},0,1),\;3\big)$$
-
-5) Optional GNN refinement (see `gnn_preparer.py` and `gnn_cpu.py`)
-
-- Input node vector $x_v$ includes extracted features and the base risk.
-- Message passing implemented (CPU-only toy GNN): aggregated message for node $v$ is the mean of incoming node features:
-  $$m_v = \frac{1}{\deg(v)}\sum_{(u\rightarrow v)} x_u$$
-
 - A linear projection followed by a sigmoid produces a refined risk:
   $$r_v = \sigma\big(W m_v + b\big)\quad\text{(sigmoid)}$$
 
